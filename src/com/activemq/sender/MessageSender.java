@@ -1,7 +1,7 @@
 package com.activemq.sender;
 
 import java.text.DecimalFormat;
-import javax.jms.Connection;
+import javax.jms.*;
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -17,14 +17,14 @@ public class MessageSender {
 
     //URL of the JMS server. DEFAULT_BROKER_URL will just mean that JMS server is on localhost
     private static final String url = ActiveMQConnection.DEFAULT_BROKER_URL;
-
     private static final double stockPriceOld = 22.5;
-
     private static final double maxAbweichung = 0.15;
     private static double stockPriceNew;
 
     // default broker URL is : tcp://localhost:61616"
     private static final String brokerF = "Börse Frankfurt"; // Queue Name.You can create any/many queue names as per your requirement.
+    private static final String brokerAnswerF = "Börse Frankfurt Antwortkanal"; // Queue Name.You can create any/many queue names as per your requirement.
+
     private static final String brokerM = "Börse München";
     private static final String brokerS = "Börse Stuttgart";
 
@@ -43,9 +43,8 @@ public class MessageSender {
         //Destination represents here our queue 'JCG_QUEUE' on the JMS server.
         //The queue will be created automatically on the server.
         Destination frankfurt = session.createQueue(brokerF);
+        Queue frankfurtAntwort = session.createQueue(brokerAnswerF);
         Destination muenchen = session.createQueue(brokerM);
-
-
 
         // MessageProducer is used for sending messages to the queue.
         MessageProducer producer1 = session.createProducer(frankfurt);
@@ -67,10 +66,20 @@ public class MessageSender {
         producer2.send(message1);
         System.out.println("Börse Frankfurt schickt Angebot: " + df.format(stockPriceNew));
 
-            connection.close();
 
-        }
+        QueueBrowser browser = session.createBrowser(frankfurtAntwort);
+
+        Boolean isEmpty = !browser.getEnumeration().hasMoreElements();
+        System.out.println(isEmpty);
+        if (isEmpty == false) {
+            MessageConsumer consumer1 = session.createConsumer(frankfurtAntwort);
+            Message answer = consumer1.receive();
+                System.out.println("Bestätige den Kauf der Aktie von Client 1");
+            }
+        connection.close();
+
     }
+}
 
 
 

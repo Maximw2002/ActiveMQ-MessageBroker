@@ -1,0 +1,7 @@
+QueueBrowser browser = session.createBrowser(frankfurtAntwort);
+
+        Boolean isEmpty = !browser.getEnumeration().hasMoreElements();
+        System.out.println(isEmpty);
+        if (isEmpty == false) {
+            MessageConsumer consumer1 = session.createConsumer(frankfurtAntwort);
+            Message answer = consumer1.receiveNoWait();
