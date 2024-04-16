@@ -7,6 +7,7 @@ import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
@@ -20,14 +21,17 @@ public class MessageReceiver {
     // default broker URL is : tcp://localhost:61616"
 
     // Name of the queue we will receive messages from
-    private static String brokerF = "Börse Frankfurt";
-    private static String brokerM = "Börse München";
-    private static String brokerS = "Börse Stuttgart";
+    private static final String brokerF = "Börse Frankfurt";
+    private static final String brokerAnswerF = "Börse Frankfurt Antwortkanal";
 
-    private static double minAbweichung = 0.1;
-    private static double stockPriceOld = 22.5;
+    private static final String brokerM = "Börse München";
+    private static final String brokerS = "Börse Stuttgart";
 
-    private static DecimalFormat df = new DecimalFormat("#.##");
+
+    private static final double minAbweichung = 0.01;
+    private static final double stockPriceOld = 22.5;
+
+    private static final DecimalFormat df = new DecimalFormat("#.##");
 
     public static void main(String[] args) throws JMSException {
 
@@ -42,6 +46,7 @@ public class MessageReceiver {
 
         // Getting the queue 'JCG_QUEUE'
         Destination frankfurt = session.createQueue(brokerF);
+        Destination frankfurtAntwort = session.createQueue(brokerAnswerF);
         Destination muenchen = session.createQueue(brokerM);
 
         // MessageConsumer is used for receiving (consuming) messages
@@ -52,30 +57,43 @@ public class MessageReceiver {
         Message message = consumer1.receive();
 
         // We will be using TestMessage in our example. MessageProducer sent us a TextMessage
-        // so we must cast to it to get access to its .getText() method.
+        // ,so we must cast to it to get access to its .getText() method.
         if(message instanceof TextMessage) {
             TextMessage textMessage = (TextMessage)message;
 
-            if(Double.parseDouble(textMessage.getText()) > stockPriceOld * (1 + minAbweichung))
-                    System.out.println("Client 1 möchte für " + df.format(Double.parseDouble(textMessage.getText())) +" an der Börse Frankfurt verkaufen");
-                if(Double.parseDouble(textMessage.getText()) < stockPriceOld * (1 - minAbweichung))
-                    System.out.println("Client 1 möchte für " + df.format(Double.parseDouble(textMessage.getText())) +" an der Börse Frankfurt kaufen");
+            if(Double.parseDouble(textMessage.getText()) > stockPriceOld * (1 + minAbweichung)) {
+                System.out.println("Client 1 möchte für " + df.format(Double.parseDouble(textMessage.getText())) + " an der Börse Frankfurt verkaufen");
+                MessageProducer producer1 = session.createProducer(frankfurtAntwort);
+                TextMessage answer = session.createTextMessage("Nachricht von Client 1 an Börse Frankfurt: ich möchte diese Aktie verkaufen");
+                producer1.send(answer);
+            }
+            else if(Double.parseDouble(textMessage.getText()) < stockPriceOld * (1 - minAbweichung)) {
+                System.out.println("Client 1 möchte für " + df.format(Double.parseDouble(textMessage.getText())) + " an der Börse Frankfurt kaufen");
+                MessageProducer producer1 = session.createProducer(frankfurtAntwort);
+                TextMessage answer = session.createTextMessage("Nachricht von Client 1 an Börse Frankfurt: ich möchte diese Aktie kaufen");
+                producer1.send(answer);
+            }
+            else {
+                System.out.println("Client 1 hält seine Aktie " + df.format(Double.parseDouble(textMessage.getText())));
+            }
             }
         // Here we receive the message.
         Message message2 = consumer2.receive();
 
         // We will be using TestMessage in our example. MessageProducer sent us a TextMessage
-        // so we must cast to it to get access to its .getText() method.
+        // ,so we must cast to it to get access to its .getText() method.
         if(message2 instanceof TextMessage) {
-            TextMessage textMessage = (TextMessage)message2;
+            TextMessage textMessage1 = (TextMessage)message2;
 
-            if(Double.parseDouble(textMessage.getText()) > stockPriceOld * (1 + minAbweichung))
-                System.out.println("Client 2 möchte für " + df.format(Double.parseDouble(textMessage.getText())) +" an der Börse München verkaufen");
-            if(Double.parseDouble(textMessage.getText()) < stockPriceOld * (1 - minAbweichung))
-                System.out.println("Client 2 möchte für " + df.format(Double.parseDouble(textMessage.getText())) +" an der Börse München kaufen");
+            if(Double.parseDouble(textMessage1.getText()) > stockPriceOld * (1 + minAbweichung))
+                System.out.println("Client 2 möchte für " + df.format(Double.parseDouble(textMessage1.getText())) + " an der Börse München verkaufen");
+            else if(Double.parseDouble(textMessage1.getText()) < stockPriceOld * (1 - minAbweichung))
+                System.out.println("Client 2 möchte für " + df.format(Double.parseDouble(textMessage1.getText())) + " an der Börse München kaufen");
+            else {
+                System.out.println("Client 2 hält seine Aktie " + df.format(Double.parseDouble(textMessage1.getText())));
+            }
         }
             connection.close();
-
         }
     }
 
