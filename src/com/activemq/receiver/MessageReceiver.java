@@ -20,14 +20,14 @@ public class MessageReceiver {
     // default broker URL is : tcp://localhost:61616"
 
     // Name of the queue we will receive messages from
-    private static String brokerF = "Börse Frankfurt";
-    private static String brokerM = "Börse München";
-    private static String brokerS = "Börse Stuttgart";
+    private static final String brokerF = "Börse Frankfurt";
+    private static final String brokerM = "Börse München";
+    private static final String brokerS = "Börse Stuttgart";
 
-    private static double minAbweichung = 0.1;
-    private static double stockPriceOld = 22.5;
+    private static final double minAbweichung = 0.1;
+    private static final double stockPriceOld = 22.5;
 
-    private static DecimalFormat df = new DecimalFormat("#.##");
+    private static final DecimalFormat df = new DecimalFormat("#.##");
 
     public static void main(String[] args) throws JMSException {
 
@@ -52,7 +52,7 @@ public class MessageReceiver {
         Message message = consumer1.receive();
 
         // We will be using TestMessage in our example. MessageProducer sent us a TextMessage
-        // so we must cast to it to get access to its .getText() method.
+        // ,so we must cast to it to get access to its .getText() method.
         if(message instanceof TextMessage) {
             TextMessage textMessage = (TextMessage)message;
 
@@ -65,7 +65,7 @@ public class MessageReceiver {
         Message message2 = consumer2.receive();
 
         // We will be using TestMessage in our example. MessageProducer sent us a TextMessage
-        // so we must cast to it to get access to its .getText() method.
+        // ,so we must cast to it to get access to its .getText() method.
         if(message2 instanceof TextMessage) {
             TextMessage textMessage = (TextMessage)message2;
 
