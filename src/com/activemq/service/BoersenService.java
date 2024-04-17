@@ -9,7 +9,7 @@ import javax.jms.*;
 public class BoersenService {
 
     public static void main(String[] args) {
-        thread(new BorsenPreisProducer(), false);
+        thread(new BoersenPreisProducer(), false);
         thread(new BoersenOrderClient("Tim"), false);
         thread(new BorsenOrderBoerse("Frankfurt"), false);
         thread(new BorsenOrderBoerse("Stuttgart"), false);
@@ -22,7 +22,7 @@ public class BoersenService {
         thread.start();
     }
 
-    public static class BorsenPreisProducer implements Runnable {
+    public static class BoersenPreisProducer implements Runnable {
 
         public void run() {
             try {
@@ -58,6 +58,7 @@ public class BoersenService {
                 // Clean up
                 session.close();
                 connection.close();
+
             } catch (Exception e) {
                 System.out.println("Caught: " + e);
                 e.printStackTrace();
