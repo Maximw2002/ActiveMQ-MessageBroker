@@ -14,6 +14,9 @@ import javax.jms.*;
         MessageConsumer consumer = null;
         Destination destination = null;
 
+        Boerse b = Boerse.QUOTRIX;
+
+
         public BoersenPreisConsumer() {
             try {
                 // Verbindung zur ActiveMQ-Broker-Instanz herstellen
@@ -48,7 +51,7 @@ import javax.jms.*;
                         stockPrice = Double.parseDouble(textMessage.getText());
 
                         System.out.println("Received price: " + stockPrice);
-
+                        response();
                     } else {
                         System.out.println("Received message of unexpected type: " + message.getClass().getSimpleName());
                     }
@@ -57,7 +60,24 @@ import javax.jms.*;
                 }
             }
         }
-        private void response(Destination replyDestination) throws JMSException {
+        private void response() throws JMSException {
+            try {
+                MessageProducer producer = null;
+                // Eine Sitzung erstellen
+                session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+                // Das Ziel (Topic) für den Nachrichtenaustausch erstellen
+                Destination destination = session.createTopic(String.valueOf(Boerse.QUOTRIX));
+
+                // Einen Nachrichtenerzeuger für das Ziel erstellen
+                producer = session.createProducer(destination);
+
+                producer.send(session.createTextMessage("buy"));
+                producer.close();
+                session.close();
+            }catch (Exception e) {
+                System.out.println(e);
+            }
 
         }
 

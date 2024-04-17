@@ -1,12 +1,15 @@
 package com.activemq.client;
 
-import com.activemq.service.BoersenService;
+import com.activemq.service.BoersenPriceProducer;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
 import javax.jms.*;
 
 public class BoersenOrderConsumer implements Runnable, ExceptionListener {
     private String clientName;
+    MessageConsumer consumerQ = null;
+    MessageConsumer consumerS = null;
+    MessageConsumer consumerF = null;
 
     public BoersenOrderConsumer(String boerse) {
         this.clientName = boerse;
@@ -26,17 +29,17 @@ public class BoersenOrderConsumer implements Runnable, ExceptionListener {
             // Create a Session
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            // Create the destination (Queue)
-            Destination topic = session.createTopic("BOERSENSPREISE");
-            Destination destination = session.createQueue("BOERSENORDER." + clientName);
+            // Create the destinations (Queue)
+            Destination destinationQ = session.createTopic(String.valueOf(Boerse.QUOTRIX));
+            Destination destinationS = session.createTopic(String.valueOf(Boerse.STUTTGART));
+            Destination destinationF = session.createTopic(String.valueOf(Boerse.FRANKFURT));
 
-            // Create a MessageConsumer from the Session to the Queue
-            MessageConsumer consumer = session.createConsumer(topic);
-            MessageProducer producer = session.createProducer(destination);
+            // Create the consumers
+            consumerQ = session.createConsumer(destinationQ);
+            consumerS = session.createConsumer(destinationS);
+            consumerF = session.createConsumer(destinationF);
 
-            consumer.setMessageListener(new TopicMessageListener());
-
-            System.out.println("Subscriber gestartet. Warte auf Nachrichten...");
+            System.out.println("Order Consumer gestartet");
 
             // Listen for orders
             while (true) {
