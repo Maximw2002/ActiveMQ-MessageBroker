@@ -38,7 +38,7 @@ public class BorsenOrderBoerse implements Runnable, ExceptionListener {
                 if (message instanceof TextMessage) {
                     TextMessage textMessage = (TextMessage) message;
                     String order = textMessage.getText();
-                    System.out.println("Received order from " + boerse + ": " + order);
+                    System.out.println("Received order from " +  ": " + order);
 
                     // Process the order (simulated)
                     System.out.println("Processing order...");
@@ -46,10 +46,10 @@ public class BorsenOrderBoerse implements Runnable, ExceptionListener {
 
                     // Send confirmation back to the client
                     Destination replyDestination = message.getJMSReplyTo();
-                    MessageProducer producer = session.createProducer(replyDestination);
-                    producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+                    MessageProducer answer = session.createProducer(replyDestination);
+                    answer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
                     TextMessage confirmation = session.createTextMessage("Order processed successfully");
-                    producer.send(confirmation);
+                    answer.send(confirmation);
                 }
             }
         } catch (Exception e) {
