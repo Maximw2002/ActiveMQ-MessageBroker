@@ -5,14 +5,14 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 
 import javax.jms.*;
 
-public class BoersenService {
+public class BoersenPriceProducer {
 
     private static final String BROKER_URL = "tcp://localhost:61616";
     private static final String TOPIC_NAME = "StockPrices";
     private static final double MAX_ABWEICHUNG = 0.3;
 
     public static void main(String[] args) {
-        thread(new BorsenPreisProducer(), false);
+        thread(new BoersenPreisProducer(), false);
         BoersenPreisConsumer consumer = new BoersenPreisConsumer();
         Thread consumerThread = new Thread(consumer);
         consumerThread.setDaemon(false);
@@ -25,12 +25,12 @@ public class BoersenService {
         thread.start();
     }
 
-    public static class BorsenPreisProducer implements Runnable {
-        @Override
-        public void run() {
-            Connection connection = null;
-            Session session = null;
-            MessageProducer producer = null;
+    public static class BoersenPreisProducer implements Runnable {
+        Connection connection = null;
+        Session session = null;
+        MessageProducer producer = null;
+
+        public BoersenPreisProducer(){
             try {
                 // Verbindung zur ActiveMQ-Broker-Instanz herstellen
                 ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("artemis", "artemis", BROKER_URL);
@@ -45,7 +45,13 @@ public class BoersenService {
 
                 // Einen Nachrichtenerzeuger für das Ziel erstellen
                 producer = session.createProducer(destination);
-
+            }catch (Exception e) {
+                System.out.println(e);
+            }
+        }
+        @Override
+        public void run() {
+            try {
                 // Aktienkurse erzeugen und als Textnachrichten senden
                 while (true) {
                     double stockPriceOld = Math.random() * 100;
@@ -60,7 +66,10 @@ public class BoersenService {
 
             } catch (JMSException | InterruptedException e) {
                 e.printStackTrace();
-            } finally {
+            }
+        }
+        private void close(){
+
                 // Ressourcen schließen
                 if (producer != null) {
                     try {
@@ -83,7 +92,6 @@ public class BoersenService {
                         e.printStackTrace();
                     }
                 }
-            }
         }
     }
 }

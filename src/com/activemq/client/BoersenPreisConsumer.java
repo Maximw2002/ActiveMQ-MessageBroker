@@ -1,6 +1,7 @@
 package com.activemq.client;
 
-    import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.activemq.ActiveMQConnectionFactory;
+import org.jline.terminal.TerminalBuilder;
 
 import javax.jms.*;
 
@@ -8,12 +9,12 @@ import javax.jms.*;
 
         private static final String BROKER_URL = "tcp://localhost:61616";
         private static final String TOPIC_NAME = "StockPrices";
+        Connection connection = null;
+        Session session = null;
+        MessageConsumer consumer = null;
+        Destination destination = null;
 
-        @Override
-        public void run() {
-            Connection connection = null;
-            Session session = null;
-            MessageConsumer consumer = null;
+        public BoersenPreisConsumer() {
             try {
                 // Verbindung zur ActiveMQ-Broker-Instanz herstellen
                 ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("artemis", "artemis", BROKER_URL);
@@ -24,26 +25,44 @@ import javax.jms.*;
                 session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
                 // Das Ziel (Topic) für den Nachrichtenaustausch erstellen
-                Destination destination = session.createTopic(TOPIC_NAME);
+                destination = session.createTopic(TOPIC_NAME);
 
                 // Einen Nachrichtenempfänger für das Ziel erstellen
                 consumer = session.createConsumer(destination);
 
-                // Nachrichten empfangen und den Preis auf der Konsole ausgeben
-                while (true) {
-                    Message message = consumer.receive();
+            } catch (JMSException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void run(){
+            while (true) {
+                Message message = null;
+                try {
+                    message = consumer.receive();
+
                     if (message instanceof TextMessage) {
                         TextMessage textMessage = (TextMessage) message;
-                        double stockPrice = Double.parseDouble(textMessage.getText());
+                        double stockPrice = 0;
+                        stockPrice = Double.parseDouble(textMessage.getText());
+
                         System.out.println("Received price: " + stockPrice);
+
                     } else {
                         System.out.println("Received message of unexpected type: " + message.getClass().getSimpleName());
                     }
+                } catch(Exception e){
+                    System.out.println(e);
                 }
+            }
+        }
+        private void response(Destination replyDestination) throws JMSException {
 
-            } catch (JMSException e) {
-                e.printStackTrace();
-            } finally {
+        }
+
+        private void close(){
+
                 // Ressourcen schließen
                 if (consumer != null) {
                     try {
@@ -66,9 +85,7 @@ import javax.jms.*;
                         e.printStackTrace();
                     }
                 }
-            }
         }
-
     }
 
 

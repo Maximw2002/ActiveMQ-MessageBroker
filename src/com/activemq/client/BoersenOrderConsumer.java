@@ -5,10 +5,10 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 
 import javax.jms.*;
 
-public class BoersenOrderClient implements Runnable, ExceptionListener {
+public class BoersenOrderConsumer implements Runnable, ExceptionListener {
     private String clientName;
 
-    public BoersenOrderClient(String boerse) {
+    public BoersenOrderConsumer(String boerse) {
         this.clientName = boerse;
     }
 
