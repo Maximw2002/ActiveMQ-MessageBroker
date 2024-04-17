@@ -1,4 +1,4 @@
-package com.activemq.sender;
+package com.activemq.boerse;
 
 import java.text.DecimalFormat;
 import javax.jms.*;
