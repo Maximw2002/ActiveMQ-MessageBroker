@@ -1,21 +1,13 @@
-package com.activemq.sender;
+package com.activemq.boerse;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 
-import javax.jms.Connection;
-import javax.jms.DeliveryMode;
-import javax.jms.Destination;
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-import javax.jms.TextMessage;
-public static class BorsenOrderConsumer implements Runnable, ExceptionListener {
+import javax.jms.*;
+
+public class BorsenOrderBoerse implements Runnable, ExceptionListener {
     private String boerse;
 
-    public BorsenOrderConsumer(String boerse) {
+    public BorsenOrderBoerse(String boerse) {
         this.boerse = boerse;
     }
 
