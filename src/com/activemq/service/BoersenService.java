@@ -1,7 +1,7 @@
 package com.activemq.service;
 
-import com.activemq.Client.BoersenOrderClient;
 import com.activemq.boerse.BorsenOrderBoerse;
+import com.activemq.client.BoersenOrderClient;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
 import javax.jms.*;
@@ -10,6 +10,7 @@ public class BoersenService {
 
     public static void main(String[] args) {
         thread(new BorsenPreisProducer(), false);
+        thread(new BoersenOrderClient("Tim"), false);
         thread(new BorsenOrderBoerse("Frankfurt"), false);
         thread(new BorsenOrderBoerse("Stuttgart"), false);
         thread(new BorsenOrderBoerse("München"), false);
@@ -43,7 +44,7 @@ public class BoersenService {
                 producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
 
                 // Simulate sending stock price updates
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < 1000; i++) {
                     // Create a message
                     String text = "AAPL: $150.50 | GOOGL: $2500.20 | MSFT: $300.75";
                     TextMessage message = session.createTextMessage(text);
@@ -51,7 +52,6 @@ public class BoersenService {
                     // Tell the producer to send the message
                     System.out.println("Sent price update: " + text);
                     producer.send(message);
-
                     Thread.sleep(2000); // Simulate periodic updates
                 }
 

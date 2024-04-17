@@ -1,4 +1,4 @@
-package com.activemq.Client;
+package com.activemq.client;
 
 import java.text.DecimalFormat;
 import javax.jms.Connection;
