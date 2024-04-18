@@ -50,7 +50,7 @@ import javax.jms.*;
                         double stockPrice = 0;
                         stockPrice = Double.parseDouble(textMessage.getText());
 
-                        System.out.println("Received price: " + stockPrice);
+                        System.out.println("Received price from Stockproducer: " + stockPrice);
                         response();
                     } else {
                         System.out.println("Received message of unexpected type Consumer: " + message.getClass().getSimpleName());
@@ -76,14 +76,18 @@ import javax.jms.*;
                 // Einen Nachrichtenerzeuger für das Ziel erstellen
                 producer = session.createProducer(destination);
 
+                producer.send(session.createTextMessage("buy-f"));
+                producer.close();
+
+                session.close();
+
+                // Eine Sitzung erstellen
+                session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
                 responseDestination = session.createQueue("RESPONSE");
 
                 // Einen Nachrichtenempfänger für das Ziel erstellen
                 responseConsumer = session.createConsumer(responseDestination);
-
-                producer.send(session.createTextMessage("buy"));
-
-                producer.close();
 
                 while (!confirmed){
                     responseMessage = responseConsumer.receive();
@@ -94,6 +98,7 @@ import javax.jms.*;
                         confirmed = true;
                     }
                 }
+                responseConsumer.close();
                 session.close();
 
             }catch (Exception e) {

@@ -5,12 +5,15 @@ import com.activemq.client.BoersenPreisConsumer;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
 import javax.jms.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BoersenPriceProducer {
 
     private static final String BROKER_URL = "tcp://localhost:61616";
     private static final String TOPIC_NAME = "StockPrices";
     private static final double MAX_ABWEICHUNG = 0.3;
+    static List<String> aktien = List.of("a", "b","c");
 
     public static void main(String[] args) {
         thread(new BoersenPreisProducer(), false);

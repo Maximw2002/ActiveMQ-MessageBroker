@@ -19,7 +19,7 @@ public class BoersenOrderConsumer implements Runnable, ExceptionListener {
     MessageConsumer consumer = null;
     Destination destination = null;
     Message message = null;
-    Boerse b = Boerse.QUOTRIX;
+    String boerse;
 
 
 
@@ -54,8 +54,20 @@ public class BoersenOrderConsumer implements Runnable, ExceptionListener {
                     TextMessage textMessage = (TextMessage) message;
                     String txtmessage = textMessage.getText();
 
-                    System.out.println("Received order: " + txtmessage);
-                    response();
+                    List<String> str = List.of(txtmessage.split("-"));
+                    switch(str.getLast()){
+                        case "q":
+                            boerse = "quotrix";
+                            break;
+                        case "f":
+                            boerse = "frankfurt";
+                            break;
+                        case "s":
+                            boerse = "stuttgart";
+                            break;
+                    }
+                    System.out.println(str.getFirst() + " an Börse " + boerse + " entgegengenommen");
+                    response(str.getFirst());
 
                 } else {
                     System.out.println("Received message of unexpected type Order : " + message.getClass().getSimpleName());
@@ -67,7 +79,7 @@ public class BoersenOrderConsumer implements Runnable, ExceptionListener {
     }
 
 
-    private void response() throws JMSException {
+    private void response(String ordertyp) throws JMSException {
         MessageProducer producer = null;
         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         try {
@@ -78,8 +90,8 @@ public class BoersenOrderConsumer implements Runnable, ExceptionListener {
                 producer = session.createProducer(replyDestination);
 
                 // Erstellen einer Antwortnachricht
-                TextMessage responseMessage = session.createTextMessage("Order bestätigt");
-                System.out.println("Order bestätigt.");
+                TextMessage responseMessage = session.createTextMessage(ordertyp + " an Börse " + boerse + " bestätigt");
+                //System.out.println(ordertyp + " an Börse " + boerse);
 
                 // Senden der Antwortnachricht
                 producer.send(responseMessage);
