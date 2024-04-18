@@ -2,6 +2,7 @@
   <library name="lib">
     <CLASSES>
       <root url="file://$USER_HOME$/Desktop/apache-artemis-2.33.0-bin/apache-artemis-2.33.0/lib" />
+      <root url="file://$USER_HOME$/Downloads/apache-artemis-2.33.0 2/lib" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
@@ -9,5 +10,6 @@
       <root url="jar://$USER_HOME$/.ideaLibSources/activemq-client-5.18.3-sources.jar!/" />
     </SOURCES>
     <jarDirectory url="file://$USER_HOME$/Desktop/apache-artemis-2.33.0-bin/apache-artemis-2.33.0/lib" recursive="false" />
+    <jarDirectory url="file://$USER_HOME$/Downloads/apache-artemis-2.33.0 2/lib" recursive="false" />
   </library>
 </component>
