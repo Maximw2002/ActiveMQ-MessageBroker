@@ -12,8 +12,9 @@ import javax.jms.*;
         Connection connection = null;
         Session session = null;
         MessageConsumer consumer = null;
+        MessageConsumer responseConsumer = null;
         Destination destination = null;
-
+        Destination responseDestination = null;
         Boerse b = Boerse.QUOTRIX;
 
 
@@ -44,7 +45,6 @@ import javax.jms.*;
                 Message message = null;
                 try {
                     message = consumer.receive();
-
                     if (message instanceof TextMessage) {
                         TextMessage textMessage = (TextMessage) message;
                         double stockPrice = 0;
@@ -53,7 +53,7 @@ import javax.jms.*;
                         System.out.println("Received price: " + stockPrice);
                         response();
                     } else {
-                        System.out.println("Received message of unexpected type: " + message.getClass().getSimpleName());
+                        System.out.println("Received message of unexpected type Consumer: " + message.getClass().getSimpleName());
                     }
                 } catch(Exception e){
                     System.out.println(e);
@@ -61,21 +61,43 @@ import javax.jms.*;
             }
         }
         private void response() throws JMSException {
+            Boolean confirmed = false;
+            Message responseMessage = null;
+
             try {
                 MessageProducer producer = null;
+
                 // Eine Sitzung erstellen
                 session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
                 // Das Ziel (Topic) für den Nachrichtenaustausch erstellen
-                Destination destination = session.createTopic(String.valueOf(Boerse.QUOTRIX));
+                Destination destination = session.createQueue("QUOTRIX");
 
                 // Einen Nachrichtenerzeuger für das Ziel erstellen
                 producer = session.createProducer(destination);
 
+                responseDestination = session.createQueue("RESPONSE");
+
+                // Einen Nachrichtenempfänger für das Ziel erstellen
+                responseConsumer = session.createConsumer(responseDestination);
+
                 producer.send(session.createTextMessage("buy"));
+
                 producer.close();
+
+                while (!confirmed){
+                    responseMessage = responseConsumer.receive();
+                    if(responseMessage instanceof TextMessage) {
+                        TextMessage txt = (TextMessage) responseMessage;
+                        String txtmesg = txt.getText();
+                        System.out.println("Confirmation: " + txtmesg);
+                        confirmed = true;
+                    }
+                }
                 session.close();
+
             }catch (Exception e) {
+
                 System.out.println(e);
             }
 

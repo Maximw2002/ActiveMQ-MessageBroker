@@ -4,51 +4,99 @@ import com.activemq.service.BoersenPriceProducer;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
 import javax.jms.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class BoersenOrderConsumer implements Runnable, ExceptionListener {
-    private String clientName;
-    MessageConsumer consumerQ = null;
-    MessageConsumer consumerS = null;
-    MessageConsumer consumerF = null;
 
-    public BoersenOrderConsumer(String boerse) {
-        this.clientName = boerse;
-    }
 
-    public void run() {
+    private static final String BROKER_URL = "tcp://localhost:61616";
+    private static final String TOPIC_NAME = "StockPrices";
+    Connection connection = null;
+    Session session = null;
+    MessageConsumer consumer = null;
+    Destination destination = null;
+    Message message = null;
+    Boerse b = Boerse.QUOTRIX;
+
+
+
+    public BoersenOrderConsumer() {
         try {
-            // Create a ConnectionFactory
-            ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory("tcp://localhost:61616");
-
-            // Create a Connection
-            Connection connection = connectionFactory.createConnection("artemis", "artemis");
+            // Verbindung zur ActiveMQ-Broker-Instanz herstellen
+            ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("artemis", "artemis", BROKER_URL);
+            connection = connectionFactory.createConnection();
             connection.start();
 
-            connection.setExceptionListener(this);
+            // Eine Sitzung erstellen
+            session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            // Create a Session
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            // Das Ziel (Topic) für den Nachrichtenaustausch erstellen
+            destination = session.createQueue("QUOTRIX");
 
-            // Create the destinations (Queue)
-            Destination destinationQ = session.createTopic(String.valueOf(Boerse.QUOTRIX));
-            Destination destinationS = session.createTopic(String.valueOf(Boerse.STUTTGART));
-            Destination destinationF = session.createTopic(String.valueOf(Boerse.FRANKFURT));
+            // Einen Nachrichtenempfänger für das Ziel erstellen
+            consumer = session.createConsumer(destination);
 
-            // Create the consumers
-            consumerQ = session.createConsumer(destinationQ);
-            consumerS = session.createConsumer(destinationS);
-            consumerF = session.createConsumer(destinationF);
-
-            System.out.println("Order Consumer gestartet");
-
-            // Listen for orders
-            while (true) {
-
-            }
-        } catch (Exception e) {
-            System.out.println("Caught: " + e);
+        } catch (JMSException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void run(){
+        while (true) {
+            try {
+                message = consumer.receive();
+
+                if (message instanceof TextMessage) {
+                    TextMessage textMessage = (TextMessage) message;
+                    String txtmessage = textMessage.getText();
+
+                    System.out.println("Received order: " + txtmessage);
+                    response();
+
+                } else {
+                    System.out.println("Received message of unexpected type Order : " + message.getClass().getSimpleName());
+                }
+            } catch(Exception e){
+                System.out.println(e);
+            }
+        }
+    }
+
+
+    private void response() throws JMSException {
+        MessageProducer producer = null;
+        session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        try {
+            // Bestimmen des Antwortziels
+            Destination replyDestination = session.createQueue("RESPONSE");
+            if (replyDestination != null) {
+                // Festlegen des Zielortes (hier: Queue oder Topic des Produzenten)
+                producer = session.createProducer(replyDestination);
+
+                // Erstellen einer Antwortnachricht
+                TextMessage responseMessage = session.createTextMessage("Order bestätigt");
+                System.out.println("Order bestätigt.");
+
+                // Senden der Antwortnachricht
+                producer.send(responseMessage);
+
+                message = null;
+                // Schließen von Ressourcen
+                producer.close();
+                session.close();
+            } else {
+                System.out.println("Kein Antwortziel angegeben.");
+            }
+
+        } catch (JMSException e) {
+            e.printStackTrace();
+        }
+
+
     }
 
     public synchronized void onException(JMSException ex) {

@@ -1,5 +1,6 @@
 package com.activemq.service;
 
+import com.activemq.client.BoersenOrderConsumer;
 import com.activemq.client.BoersenPreisConsumer;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
@@ -17,6 +18,7 @@ public class BoersenPriceProducer {
         Thread consumerThread = new Thread(consumer);
         consumerThread.setDaemon(false);
         consumerThread.start();
+        thread(new BoersenOrderConsumer(), false);
     }
 
     public static void thread(Runnable runnable, boolean daemon) {
