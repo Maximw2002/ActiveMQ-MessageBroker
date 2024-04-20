@@ -76,7 +76,7 @@ import javax.jms.*;
                 // Einen Nachrichtenerzeuger für das Ziel erstellen
                 producer = session.createProducer(destination);
 
-                producer.send(session.createTextMessage("buy-f"));
+                producer.send(session.createTextMessage("buy-fgit"));
                 producer.close();
 
                 session.close();
