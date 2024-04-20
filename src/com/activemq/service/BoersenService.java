@@ -1,19 +1,22 @@
 package com.activemq.service;
 
-import com.activemq.boerse.BorsenOrderBoerse;
-import com.activemq.client.BoersenOrderClient;
+import com.activemq.client.BoersenPreisConsumer;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
 import javax.jms.*;
 
 public class BoersenService {
 
+    private static final String BROKER_URL = "tcp://localhost:61616";
+    private static final String TOPIC_NAME = "StockPrices";
+    private static final double MAX_ABWEICHUNG = 0.3;
+
     public static void main(String[] args) {
-        thread(new BoersenPreisProducer(), false);
-        thread(new BoersenOrderClient("Tim"), false);
-        thread(new BorsenOrderBoerse("Frankfurt"), false);
-        thread(new BorsenOrderBoerse("Stuttgart"), false);
-        thread(new BorsenOrderBoerse("München"), false);
+        thread(new BorsenPreisProducer(), false);
+        BoersenPreisConsumer consumer = new BoersenPreisConsumer();
+        Thread consumerThread = new Thread(consumer);
+        consumerThread.setDaemon(false);
+        consumerThread.start();
     }
 
     public static void thread(Runnable runnable, boolean daemon) {
@@ -22,46 +25,64 @@ public class BoersenService {
         thread.start();
     }
 
-    public static class BoersenPreisProducer implements Runnable {
-
+    public static class BorsenPreisProducer implements Runnable {
+        @Override
         public void run() {
+            Connection connection = null;
+            Session session = null;
+            MessageProducer producer = null;
             try {
-                // Create a ConnectionFactory
-                ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory("tcp://localhost:61616");
-
-                // Create a Connection
-                Connection connection = connectionFactory.createConnection("artemis", "artemis");
+                // Verbindung zur ActiveMQ-Broker-Instanz herstellen
+                ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("artemis", "artemis", BROKER_URL);
+                connection = connectionFactory.createConnection();
                 connection.start();
 
-                // Create a Session
-                Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                // Eine Sitzung erstellen
+                session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-                // Create the destination (Topic)
-                Destination destination = session.createTopic("BOERSENPREISE");
+                // Das Ziel (Topic) für den Nachrichtenaustausch erstellen
+                Destination destination = session.createTopic(TOPIC_NAME);
 
-                // Create a MessageProducer from the Session to the Topic
-                MessageProducer producer = session.createProducer(destination);
-                producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+                // Einen Nachrichtenerzeuger für das Ziel erstellen
+                producer = session.createProducer(destination);
 
-                // Simulate sending stock price updates
-                for (int i = 0; i < 1000; i++) {
-                    // Create a message
-                    String text = "AAPL: $150.50 | GOOGL: $2500.20 | MSFT: $300.75";
-                    TextMessage message = session.createTextMessage(text);
-
-                    // Tell the producer to send the message
-                    System.out.println("Sent price update: " + text);
+                // Aktienkurse erzeugen und als Textnachrichten senden
+                while (true) {
+                    double stockPriceOld = Math.random() * 100;
+                    double stockPriceNew = stockPriceOld;
+                    while (stockPriceOld * (1 + MAX_ABWEICHUNG) < stockPriceNew || stockPriceOld * (1 - MAX_ABWEICHUNG) > stockPriceNew)
+                        stockPriceNew = (Math.random() * 100);
+                    TextMessage message = session.createTextMessage(Double.toString(stockPriceNew));
                     producer.send(message);
-                    Thread.sleep(2000); // Simulate periodic updates
+                    System.out.println("Sent: " + stockPriceNew);
+                    Thread.sleep(1000);
                 }
 
-                // Clean up
-                session.close();
-                connection.close();
-
-            } catch (Exception e) {
-                System.out.println("Caught: " + e);
+            } catch (JMSException | InterruptedException e) {
                 e.printStackTrace();
+            } finally {
+                // Ressourcen schließen
+                if (producer != null) {
+                    try {
+                        producer.close();
+                    } catch (JMSException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (session != null) {
+                    try {
+                        session.close();
+                    } catch (JMSException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (JMSException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
     }
