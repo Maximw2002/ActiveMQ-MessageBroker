@@ -13,7 +13,7 @@ public class BoersenPriceProducer {
     private static final String BROKER_URL = "tcp://localhost:61616";
     private static final String TOPIC_NAME = "StockPrices";
     private static final double MAX_ABWEICHUNG = 0.3;
-    static List<String> aktien = List.of("a", "b","c");
+    static String nachricht;
 
     public static void main(String[] args) {
         thread(new BoersenPreisProducer(), false);
@@ -63,7 +63,8 @@ public class BoersenPriceProducer {
                     double stockPriceNew = stockPriceOld;
                     while (stockPriceOld * (1 + MAX_ABWEICHUNG) < stockPriceNew || stockPriceOld * (1 - MAX_ABWEICHUNG) > stockPriceNew)
                         stockPriceNew = (Math.random() * 100);
-                    TextMessage message = session.createTextMessage(Double.toString(stockPriceNew));
+                    nachricht = "A:"+ stockPriceNew + "/B:"+ stockPriceNew;
+                    TextMessage message = session.createTextMessage(nachricht);
                     producer.send(message);
                     System.out.println("Sent: " + stockPriceNew);
                     Thread.sleep(1000);

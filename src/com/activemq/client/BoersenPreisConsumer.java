@@ -4,8 +4,11 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import org.jline.terminal.TerminalBuilder;
 
 import javax.jms.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
-    public class BoersenPreisConsumer implements Runnable {
+public class BoersenPreisConsumer implements Runnable {
 
         private static final String BROKER_URL = "tcp://localhost:61616";
         private static final String TOPIC_NAME = "StockPrices";
@@ -15,7 +18,12 @@ import javax.jms.*;
         MessageConsumer responseConsumer = null;
         Destination destination = null;
         Destination responseDestination = null;
-        Boerse b = Boerse.QUOTRIX;
+        String anweisung = "buy";
+        String boerse = "h";
+        String aktie = "a";
+
+        String orderString = anweisung + "-" + boerse + "-" + aktie;
+
 
 
         public BoersenPreisConsumer() {
@@ -47,13 +55,25 @@ import javax.jms.*;
                     message = consumer.receive();
                     if (message instanceof TextMessage) {
                         TextMessage textMessage = (TextMessage) message;
-                        double stockPrice = 0;
-                        stockPrice = Double.parseDouble(textMessage.getText());
+                        double stockPriceA = 0;
+                        double stockPriceB = 0;
+                        String aktieA = null;
+                        String aktieB = null;
+                        String msg = textMessage.getText();
 
-                        System.out.println("Received price from Stockproducer: " + stockPrice);
+                        List<String> str = List.of(msg.split("/"));
+                        List<String> splitted = str.stream()
+                                .flatMap(s -> Arrays.stream(s.split(":")))
+                                .collect(Collectors.toList());
+                        stockPriceA = Double.parseDouble(splitted.get(1));
+                        stockPriceB = Double.parseDouble(splitted.get(3));
+                        aktieA = splitted.get(0);
+                        aktieB = splitted.get(2);
+
+                        System.out.println("Stockprice " + aktieA + ": " + stockPriceA + " Stockprice " + aktieB + ": " + stockPriceB);
                         response();
                     } else {
-                        System.out.println("Received message of unexpected type Consumer: " + message.getClass().getSimpleName());
+                        throw new Exception("Falscher Message type");
                     }
                 } catch(Exception e){
                     System.out.println(e);
@@ -71,12 +91,12 @@ import javax.jms.*;
                 session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
                 // Das Ziel (Topic) für den Nachrichtenaustausch erstellen
-                Destination destination = session.createQueue("QUOTRIX");
+                Destination destination = session.createQueue("ORDER");
 
                 // Einen Nachrichtenerzeuger für das Ziel erstellen
                 producer = session.createProducer(destination);
 
-                producer.send(session.createTextMessage("buy-fgit"));
+                producer.send(session.createTextMessage(orderString));
                 producer.close();
 
                 session.close();
@@ -102,7 +122,6 @@ import javax.jms.*;
                 session.close();
 
             }catch (Exception e) {
-
                 System.out.println(e);
             }
 

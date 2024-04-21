@@ -20,7 +20,7 @@ public class BoersenOrderConsumer implements Runnable, ExceptionListener {
     Destination destination = null;
     Message message = null;
     String boerse;
-
+    String aktie;
 
 
     public BoersenOrderConsumer() {
@@ -34,7 +34,7 @@ public class BoersenOrderConsumer implements Runnable, ExceptionListener {
             session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             // Das Ziel (Topic) für den Nachrichtenaustausch erstellen
-            destination = session.createQueue("QUOTRIX");
+            destination = session.createQueue("ORDER");
 
             // Einen Nachrichtenempfänger für das Ziel erstellen
             consumer = session.createConsumer(destination);
@@ -55,7 +55,7 @@ public class BoersenOrderConsumer implements Runnable, ExceptionListener {
                     String txtmessage = textMessage.getText();
 
                     List<String> str = List.of(txtmessage.split("-"));
-                    switch(str.getLast()){
+                    switch(str.get(1)) {
                         case "q":
                             boerse = "quotrix";
                             break;
@@ -65,8 +65,21 @@ public class BoersenOrderConsumer implements Runnable, ExceptionListener {
                         case "s":
                             boerse = "stuttgart";
                             break;
+                        default:
+                            throw new Exception("Keine richtige Börse");
                     }
-                    System.out.println(str.getFirst() + " an Börse " + boerse + " entgegengenommen");
+                        switch (str.getLast()){
+                            case "a":
+                                aktie = "A";
+                                break;
+                            case "b":
+                                aktie = "B";
+                                break;
+                            default:
+                                throw new Exception("Aktie nicht gefunden");
+                        }
+
+                    System.out.println(str.getFirst() + " an Börse " + boerse + " entgegengenommen für Aktie " + aktie);
                     response(str.getFirst());
 
                 } else {
